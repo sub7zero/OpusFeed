@@ -35,19 +35,19 @@ the third line will build **opusfeed** and install the final binary to `./bin/`.
 
 **other make commands :**
 
- -  init dependencies only:
+ -  init dependencies only :
 
 		$ make init-3rdparty  
- -  init opusfeed only:
+ -  init opusfeed only :
 
 		$ make init-opusfeed  
- -  clean the dependencies' build files & logs:
+ -  clean the dependencies' build files & logs :
 
 		$ make clean-3rdparty  
- -  clean opusfeed's build files & log:
+ -  clean opusfeed's build files & log :
 
 		$ make clean-opusfeed 
- -  clean all build files & logs:
+ -  clean all build files & logs :
 
 		$ make clean  
  -  wipe everything except the opusfeed binary (this will delete built dependencies) :
