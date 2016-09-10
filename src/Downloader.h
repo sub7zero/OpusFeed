@@ -70,6 +70,7 @@ class Downloader{
 		int64_t getDownloadedBytes(){return m_offset;}
 		int64_t getContentLength(){return m_contentlen;}
 		long getStatusCode(){return m_statuscode;}
+		int64_t getLastModified(){return m_lastmodified;}
 	private:
 		bool init();
 		static size_t headerfnc(char *buff,size_t size,size_t nitems,void *userdata);
@@ -88,6 +89,7 @@ class Downloader{
 		ByteArray *m_buffer;
 		CURL *m_curl;
 		long m_statuscode;
+		int64_t m_lastmodified;
 		//-
 		bool m_followlocation;
 		int64_t m_speedlimit;

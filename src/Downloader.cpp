@@ -55,6 +55,9 @@ size_t Downloader::headerfnc(char *buff,size_t size,size_t nitems,void *userdata
 	matches=Regex::extract("^HTTP/\\d\\.\\d\\s(\\d+)",string(buff,asize).c_str(),PCRE_MULTILINE);
 	if (matches.size())
 		obj->m_statuscode=atol(matches[0][1].c_str());
+	matches=Regex::extract("Last-Modified: (.+)",string(buff,asize).c_str(),PCRE_MULTILINE);
+	if (matches.size())
+		obj->m_lastmodified=parse(matches[0][1].c_str());
 	return asize;
 }
 //---
@@ -353,6 +356,9 @@ bool Downloader::downloadIfModified(const char *url,const char *file,int64_t tim
 }
 //---
 bool Downloader::init(){
+	m_lastmodified=-1;
+	m_statuscode=-1;
+	//-
 	log(verbose,true,true,"- initializing libcurl");
 	m_curl=curl_easy_init();
 	if (!m_curl){

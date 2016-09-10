@@ -301,7 +301,7 @@ int main(int argc,char **argv){
 			//-
 			int64_t now=RFC822Time::nowgmt(); //for updating lastfetch in the db
 			for (int i=0;i<options["--download-retries"].value<long>();i++){
-				if (!options["--fetch-if-modified"].value<bool>() ||lastfetch==0){
+				if (!options["--fetch-if-modified"].value<bool>() || lastfetch==0){
 					if (downloader.download(options["--feed-url"].value<string>().c_str(),&rssbuff) && downloader.getStatusCode()==200){
 						rssfetched=true;
 						break;
@@ -325,6 +325,9 @@ int main(int argc,char **argv){
 				log(normal,true,true,"+ retrying in (%d) seconds...",options["--retry-wait"].value<long>());
 				xsleep(options["--retry-wait"].value<long>()*1000);
 			}
+			int64_t lastmod=downloader.getLastModified();
+			if (lastmod==-1)
+				lastmod=now; //if no 'Last-Modified' header is present, use server time and hope it's set correctly
 			if (!rssfetched){
 				log(normal,true,true,"! fetching feed failed");
 				goto out;
@@ -553,7 +556,7 @@ int main(int argc,char **argv){
 				Tree *t_title=e->insertChild("title");
 				t_title->setText((const char*)sqlite3_column_text(stmt,0));
 				Tree *t_url=e->insertChild("enclosure");
-				t_url->setAttribute("url",options["--media-prefix"].value<string>()+(const char*)sqlite3_column_text(stmt,1));
+				t_url->setAttribute("url",options["--media-prefix"].value<string>()+"/"+(const char*)sqlite3_column_text(stmt,1));
 				t_url->setAttribute("length",(const char *)sqlite3_column_text(stmt,2));
 				t_url->setAttribute("type","audio/opus");
 				Tree *t_date=e->insertChild("pubDate");
@@ -624,10 +627,10 @@ int main(int argc,char **argv){
 				goto out;
 			}
 			sqlite3_bind_text(stmt,1,"lastfetch",-1,NULL);
-			sqlite3_bind_int64(stmt,2,now);
+			sqlite3_bind_int64(stmt,2,lastmod);
 			sqlite3_step(stmt);
 			sqlite3_finalize(stmt);
-			string statement="update feedinfo set value="+str(now)+" where key=\"lastfetch\"";
+			string statement="update feedinfo set value="+str(lastmod)+" where key=\"lastfetch\"";
 			sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			//-execute user command if necessary
 			if (dbchanged && !options["--exec-on-change"].empty()){
