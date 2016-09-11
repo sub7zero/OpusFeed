@@ -522,7 +522,7 @@ int main(int argc,char **argv){
 				sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			}
 			//-cleanup old items
-			if (!options["--max-age"].empty()){
+			if (options["--max-age"].value<long>()!=0){
 				sqlite3_stmt *stmt;
 				long maxage=options["--max-age"].value<long>();
 				string statement="select file from items where date<"+str(RFC822Time::nowgmt()-maxage*24*60*60);
