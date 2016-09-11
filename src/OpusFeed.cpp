@@ -85,6 +85,14 @@ int64_t filesize(const char *file){
 	return ret;
 }
 //---
+bool fileexists(const char *file){
+	FILE *f=fopen(file,"r");
+	if (f==NULL)
+		return false;
+	fclose(f);
+	return true;
+}
+//---
 void touch(const char *file){
   struct stat s;
   utimbuf newtimes;
@@ -260,6 +268,22 @@ int main(int argc,char **argv){
 		}
 		closedir(dp);
 	}
+	//-
+	sqlite3_stmt *stmt;
+	if (sqlite3_prepare_v2(db,"select file from items",-1,&stmt,NULL)!=SQLITE_OK){
+		sqlite3_finalize(stmt);
+		log(normal,true,true,"! db error");
+		return -1;
+	}
+	while (sqlite3_step(stmt)==SQLITE_ROW){
+		string fname=(const char *)sqlite3_column_text(stmt,0);
+		string file=options["--media-dir"].value<string>()+"/"+fname;
+		if (!fileexists(file.c_str())){
+				string statement="delete from items where file=\""+fname+"\"";
+				sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
+		}
+	}
+	sqlite3_finalize(stmt);
 	//-setup downloader & converter
 	Downloader downloader;
 	downloader.setSpeedLimit(options["--speed-limit"].value<long>()*1024);
@@ -289,7 +313,6 @@ int main(int argc,char **argv){
 			ByteArray rssbuff;
 			bool rssfetched=false;
 			//-
-			sqlite3_stmt *stmt;
 			if (sqlite3_prepare_v2(db,"select value from feedinfo where key=\"lastfetch\"",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
 				log(normal,true,true,"! db error");
@@ -537,7 +560,7 @@ int main(int argc,char **argv){
 					remove(file.c_str());
 				}
 				sqlite3_finalize(stmt);
-				statement="delete file from items where date<"+str(RFC822Time::nowgmt()-maxage*24*60*60);
+				statement="delete from items where date<"+str(RFC822Time::nowgmt()-maxage*24*60*60);
 				sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			}
 			//-generate rss items
