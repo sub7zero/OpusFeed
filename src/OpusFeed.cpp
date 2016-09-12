@@ -455,7 +455,7 @@ int main(int argc,char **argv){
 			newitems.sort(datecmp);
 			list<rssitem>::iterator i=newitems.begin();
 			long maxitems=options["--max-items"].value<long>();
-			while(i!=newitems.end() && (maxitems==0 || count+distance(newitems.begin(),i)<maxitems)){
+			while(i!=newitems.end() && (maxitems==0 || distance(newitems.begin(),i)<maxitems)){
 				log(normal,true,true,"+ downloading (%s)",i->title.c_str());
 				string tname="opusfeed-"+str(RFC822Time::nowgmt());
 				string tfile=options["--tmp-dir"].value<string>()+"/"+tname;
@@ -565,7 +565,7 @@ int main(int argc,char **argv){
 			}
 			//-generate rss items
 			log(verbose,true,true,"+ generating rss feed");
-			if (sqlite3_prepare_v2(db,"select * from items",-1,&stmt,NULL)!=SQLITE_OK){
+			if (sqlite3_prepare_v2(db,"select * from items order by date desc",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
 				log(normal,true,true,"! db error");
 				goto out;
