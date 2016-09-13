@@ -15,13 +15,13 @@ opusfeed:
 	cd $(DIR_TMP)/opusfeed && make install 2>&1 | tee $(DIR_LOG)/opusfeed.txt
 #---
 clean-3rdparty:
-	- rm -rf $(DIR_TMP)/sqlite*
-	- rm -rf $(DIR_TMP)/openssl*
-	- rm -rf $(DIR_TMP)/curl*
-	- rm -rf $(DIR_TMP)/libav*
-	- rm -rf $(DIR_TMP)/pcre*
-	- rm -rf $(DIR_TMP)/tinyxml2*
-	- rm -rf $(DIR_TMP)/opus*
+	- rm -rf $(DIR_TMP)/sqlite-*
+	- rm -rf $(DIR_TMP)/openssl-*
+	- rm -rf $(DIR_TMP)/curl-*
+	- rm -rf $(DIR_TMP)/libav-*
+	- rm -rf $(DIR_TMP)/pcre-*
+	- rm -rf $(DIR_TMP)/tinyxml2-*
+	- rm -rf $(DIR_TMP)/opus-*
 	- rm -f $(DIR_LOG)/sqlite.txt
 	- rm -f $(DIR_LOG)/openssl.txt
 	- rm -f $(DIR_LOG)/curl.txt

@@ -18,14 +18,23 @@
 using namespace ConsoleColor;
 using namespace std;
 
-namespace Log{
-	enum LogLevel{
-		verbose,    //print everything
-		normal,     //print errors & status (default)
-		quiet       //print nothing
-	};
-	void setLogLevel(LogLevel l);
-	void setColorsEnabled(bool b); //true by default
-	void log(LogLevel l,bool newline,bool linebreak,const char *fmt,...);
+class Log{
+	public:
+		enum LogLevel{
+			verbose,    //print everything
+			normal,     //print errors & status (default)
+			quiet       //print nothing
+		};
+		static void setLogLevel(LogLevel l) {p_loglevel=l;}
+		static void setColorsEnabled(bool b) {p_colorsenabled=b;} //true by default
+		static void setProgressEnabled(bool b) {p_progressenabled=b;} //true by default (lines starting with '\s*>' won't be logged when false)
+		static LogLevel getLogLevel() {return p_loglevel;}
+		static bool getColorsEnabled() {return p_colorsenabled;}
+		static bool getProgressEnabled() {return p_progressenabled;}
+		static void log(LogLevel l,bool newline,bool linebreak,const char *fmt,...);
+	private:
+		static LogLevel p_loglevel;
+		static bool p_colorsenabled;
+		static bool p_progressenabled;
 };
 #endif //LOG_H

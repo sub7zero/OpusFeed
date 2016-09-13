@@ -35,7 +35,7 @@ size_t Downloader::writefnc(char *buff,size_t size,size_t nitems,void *userdata)
 	}else{
 		size_t asize=size*nitems;
 		if (!obj->m_buffer->append(buff,asize)){
-			log(normal,true,true,"! couldn't allocate enough memory");
+			Log::log(Log::normal,true,true,"! couldn't allocate enough memory");
 			return 0;
 		}
 		return asize;
@@ -90,8 +90,9 @@ int Downloader::progressfnc(void *userdata,curl_off_t dltotal,curl_off_t dlnow,c
 			sprintf(percentage_str,"--%%");
 		else
 			sprintf(percentage_str,"%02d%%",percentage);
-		log(normal,false,false,"\r-%*c",78,' '); //clear line, the '-' to preserve color
-		log(normal,false,false,"\r- (%s-%s) %s @ %s/s - %s , ETA : %s",
+		Log::log(Log::normal,false,false,"\r>%*c\r> (%s-%s) %s @ %s/s - %s , ETA : %s",
+							   78,
+							   ' ',
 							   size_format(rdlnow).c_str(),
 							   dltotal==0?size_format(0).c_str():size_format(rdltotal).c_str(),
 							   percentage_str,
@@ -105,10 +106,10 @@ int Downloader::progressfnc(void *userdata,curl_off_t dltotal,curl_off_t dlnow,c
 }
 //---
 template<typename T> bool Downloader::curl_setopt_internal(CURL *curl,CURLoption opt,const char *optstr,T value){
-	log(verbose,true,true,"- setting libcurl option : %s",optstr);
+	Log::log(Log::verbose,true,true,"- setting libcurl option : %s",optstr);
 	CURLcode err=curl_easy_setopt(curl,opt,value);
 	if (err){
-		log(normal,true,true,"! error while setting curl option (%s) : %d",optstr,err);
+		Log::log(Log::normal,true,true,"! error while setting curl option (%s) : %d",optstr,err);
 		return false;
 	}
 	return true;
@@ -131,15 +132,14 @@ bool Downloader::download(const char *url,ByteArray *buffer){
 	m_buffer->cleanup();
 	//-
 	bool ret=true;
-	log(verbose,true,true,"- downloading");
+	Log::log(Log::verbose,true,true,"- downloading...");
 	CURLcode err;
 	if ((err=curl_easy_perform(m_curl))!=CURLE_OK){
-		log(normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
+		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		log(normal,false,true,"");
 		if (m_statuscode!=200)
-			log(normal,true,true,"! http code (%d) returned",m_statuscode);
+			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	curl_easy_cleanup(m_curl);
 	return ret;
@@ -166,15 +166,14 @@ bool Downloader::resume(const char *url,ByteArray *buffer){
 	}
 	//-
 	bool ret=true;
-	log(verbose,true,true,"- downloading");
+	Log::log(Log::verbose,true,true,"- downloading...");
 	CURLcode err;
 	if ((err=curl_easy_perform(m_curl))!=CURLE_OK){
-		log(normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
+		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		log(normal,false,true,"");
 		if (m_statuscode!=200)
-			log(normal,true,true,"! http code (%d) returned",m_statuscode);
+			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	curl_easy_cleanup(m_curl);
 	return ret;
@@ -193,21 +192,20 @@ bool Downloader::download(const char *url,const char *file){
 	m_startoffset=0;
 	m_offset=0;
 	if ((m_fileh=fopen(file,"wb"))==0){
-		log(normal,true,true,"! unable open output file for writing");
+		Log::log(Log::normal,true,true,"! unable open output file for writing");
 		curl_easy_cleanup(m_curl);
 		return false;
 	}
 	//-
 	bool ret=true;
-	log(verbose,true,true,"- downloading");
+	Log::log(Log::verbose,true,true,"- downloading...");
 	CURLcode err;
 	if ((err=curl_easy_perform(m_curl))!=CURLE_OK){
-		log(normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
+		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		log(normal,false,true,"");
 		if (m_statuscode!=200)
-			log(normal,true,true,"! http code (%d) returned",m_statuscode);
+			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	fclose(m_fileh);
 	m_fileh=NULL;
@@ -238,28 +236,27 @@ bool Downloader::resume(const char *url,const char *file){
 			return false;
 		}
 		if ((m_fileh=fopen(file,"ab"))==0){
-			log(normal,true,true,"! unable open output file for writing");
+			Log::log(Log::normal,true,true,"! unable open output file for writing");
 			curl_easy_cleanup(m_curl);
 			return false;
 		}
 	}else{
 		if ((m_fileh=fopen(file,"wb"))==0){
-			log(normal,true,true,"! unable open output file for writing");
+			Log::log(Log::normal,true,true,"! unable open output file for writing");
 			curl_easy_cleanup(m_curl);
 			return false;
 		}
 	}
 	//-
 	bool ret=true;
-	log(verbose,true,true,"- downloading");
+	Log::log(Log::verbose,true,true,"- downloading...");
 	CURLcode err;
 	if ((err=curl_easy_perform(m_curl))!=CURLE_OK){
-		log(normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
+		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		log(normal,false,true,"");
 		if (m_statuscode!=200)
-			log(normal,true,true,"! http code (%d) returned",m_statuscode);
+			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	fclose(m_fileh);
 	m_fileh=NULL;
@@ -295,15 +292,14 @@ bool Downloader::downloadIfModified(const char *url,ByteArray *buffer,int64_t ti
 	m_buffer->cleanup();
 	//-
 	bool ret=true;
-	log(verbose,true,true,"- downloading");
+	Log::log(Log::verbose,true,true,"- downloading...");
 	CURLcode err;
 	if ((err=curl_easy_perform(m_curl))!=CURLE_OK){
-		log(normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
+		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		log(normal,false,true,"");
 		if (m_statuscode!=200)
-			log(normal,true,true,"! http code (%d) returned",m_statuscode);
+			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	curl_easy_cleanup(m_curl);
 	return ret;
@@ -333,21 +329,20 @@ bool Downloader::downloadIfModified(const char *url,const char *file,int64_t tim
 	m_startoffset=0;
 	m_offset=0;
 	if ((m_fileh=fopen(file,"wb"))==0){
-		log(normal,true,true,"! unable open output file for writing");
+		Log::log(Log::normal,true,true,"! unable open output file for writing");
 		curl_easy_cleanup(m_curl);
 		return false;
 	}
 	//-
 	bool ret=true;
-	log(verbose,true,true,"- downloading");
+	Log::log(Log::verbose,true,true,"- downloading...");
 	CURLcode err;
 	if ((err=curl_easy_perform(m_curl))!=CURLE_OK){
-		log(normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
+		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		log(normal,false,true,"");
 		if (m_statuscode!=200)
-			log(normal,true,true,"! http code (%d) returned",m_statuscode);
+			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	fclose(m_fileh);
 	m_fileh=NULL;
@@ -359,10 +354,10 @@ bool Downloader::init(){
 	m_lastmodified=-1;
 	m_statuscode=-1;
 	//-
-	log(verbose,true,true,"- initializing libcurl");
+	Log::log(Log::verbose,true,true,"- initializing libcurl");
 	m_curl=curl_easy_init();
 	if (!m_curl){
-		log(normal,true,true,"! unable to initialize libcurl");
+		Log::log(Log::normal,true,true,"! unable to initialize libcurl");
 		curl_easy_cleanup(m_curl);
 		return false;
 	}

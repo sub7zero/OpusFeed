@@ -20,7 +20,6 @@
 #include "Log.h"
 using namespace std;
 using namespace RFC822Time;
-using namespace Log;
 
 typedef vector<vector<string> > regexmatch;
 class Downloader{

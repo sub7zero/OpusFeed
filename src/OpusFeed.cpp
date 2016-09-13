@@ -24,15 +24,14 @@
 #include "Regex.h"
 #include "sqlite3.h"
 using namespace std;
-using namespace Log;
 
-#define OPUS_FEED_VERSION "1.1"
+#define OPUS_FEED_VERSION "1.2"
 
 #ifdef _WIN32
 #include <windows.h>
-#endif
-#ifdef __unix__
+#else
 #include <unistd.h>
+#include <signal.h>
 #endif
 //---
 void xsleep(unsigned long ms){
@@ -126,7 +125,41 @@ inline string str(int64_t i){ // lltoa replacement
 	return t;
 }
 //---
+sqlite3 *db=NULL;
+void exitgracifly(int ecode=0){
+	//-restore console color
+	if (Log::getColorsEnabled())
+		ConsoleColor::restoreColors();
+	//-close db
+	if (db)
+		sqlite3_close(db);
+	//-
+	exit(ecode);
+}
+//---
+#ifdef _WIN32
+	bool win_ctrlhandler(DWORD type){
+		if (type==CTRL_C_EVENT)
+			exitgracifly(0);
+		return false;
+	}
+#else
+	void linux_ctrlhandler(int i){
+		exitgracifly(0);
+	}
+#endif
+//---
 int main(int argc,char **argv){
+	#ifdef _WIN32
+		SetConsoleCtrlHandler((PHANDLER_ROUTINE)win_ctrlhandler,TRUE);
+	#else
+		struct sigaction exithandler;
+		exithandler.sa_handler=linux_ctrlhandler;
+		sigemptyset(&exithandler.sa_mask);
+		exithandler.sa_flags=0;
+		sigaction(SIGINT,&exithandler,NULL);
+	#endif
+	//-
 	OptionsManager options;
 	//-
 	SetParam<long> type_samplerates;
@@ -207,11 +240,12 @@ int main(int argc,char **argv){
 	options.reg("--verbose","verbose output");
 	options.reg("--quiet","suppress output");
 	options.reg("--enable-colors",&type_yesno,"enable colored output",true,true);
+	options.reg("--enable-progress",&type_yesno,"show downloading/converting progress",true,true);
 	options.reg("--help","this message");
 	//-
 	for (int i=1;i<argc;i++){
 		if (!options.append(argv[i]))
-			return -1;
+			exitgracifly(-1);
 	}
 	if (argc==1 || options["--help"].value<bool>()){
 		puts("OpusFeed "OPUS_FEED_VERSION" by Alex Izeld, Email : sub7zero@hotmail.com");
@@ -220,32 +254,32 @@ int main(int argc,char **argv){
 		puts("Options :");
 		options.print();
 		puts("");
-		return 0;
+		exitgracifly();
 	}
 	if (!options.validate())
-		return -1;
+		exitgracifly(-1);
 	if (options["--verbose"].value<bool>())
-		setLogLevel(verbose);
+		Log::setLogLevel(Log::verbose);
 	if (options["--quiet"].value<bool>())
-		setLogLevel(quiet);
-    setColorsEnabled(options["--enable-colors"].value<bool>());
+		Log::setLogLevel(Log::quiet);
+    Log::setColorsEnabled(options["--enable-colors"].value<bool>());
+    Log::setProgressEnabled(options["--enable-progress"].value<bool>());
 	//-open db
-	log(verbose,true,true,"+ opening database");
-	sqlite3 *db;
+	Log::log(Log::verbose,true,true,"+ opening database");
 	if (sqlite3_open(options["--db-file"].value<string>().c_str(),&db)!=SQLITE_OK){
-		log(normal,true,true,"! unable to open the database file");
-		return -1;
+		Log::log(Log::normal,true,true,"! unable to open the database file");
+		exitgracifly(-1);
 	}
 	if (sqlite3_exec(db,"create table if not exists items (title text primary key,file text,size integer,date integer,url text,attributes text);",NULL,NULL,NULL)!=SQLITE_OK){
-		log(normal,true,true,"! unable to write to the database file");
-		return -1;
+		Log::log(Log::normal,true,true,"! unable to write to the database file");
+		exitgracifly(-1);
 	}
 	if (sqlite3_exec(db,"create table if not exists feedinfo (key text primary key,value text);",NULL,NULL,NULL)!=SQLITE_OK){
-		log(normal,true,true,"! unable to write to the database file");
-		return -1;
+		Log::log(Log::normal,true,true,"! unable to write to the database file");
+		exitgracifly(-1);
 	}
 	//-cleanup orphan files
-	log(verbose,true,true,"+ cleaning up orphan files");
+	Log::log(Log::verbose,true,true,"+ cleaning up orphan files");
 	DIR *dp;
 	if((dp=opendir(options["--media-dir"].value<string>().c_str()))!=NULL){
 		dirent *dirp;
@@ -256,7 +290,7 @@ int main(int argc,char **argv){
 			if (sqlite3_prepare_v2(db,"select * from items where file=?;",-1,&stmt,NULL)!=SQLITE_OK ||
 				sqlite3_bind_text(stmt,1,dirp->d_name,-1,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
-				log(normal,true,true,"! db error");
+				Log::log(Log::normal,true,true,"! db error");
 				continue;
 			}
 			if (sqlite3_step(stmt)==SQLITE_DONE){
@@ -272,8 +306,8 @@ int main(int argc,char **argv){
 	sqlite3_stmt *stmt;
 	if (sqlite3_prepare_v2(db,"select file from items",-1,&stmt,NULL)!=SQLITE_OK){
 		sqlite3_finalize(stmt);
-		log(normal,true,true,"! db error");
-		return -1;
+		Log::log(Log::normal,true,true,"! db error");
+		exitgracifly(-1);
 	}
 	while (sqlite3_step(stmt)==SQLITE_ROW){
 		string fname=(const char *)sqlite3_column_text(stmt,0);
@@ -309,13 +343,13 @@ int main(int argc,char **argv){
 	while(1){
 		{
 			bool dbchanged=false;
-			log(normal,true,true,"+ fetching feed");
+			Log::log(Log::normal,true,true,"+ fetching feed");
 			ByteArray rssbuff;
 			bool rssfetched=false;
 			//-
 			if (sqlite3_prepare_v2(db,"select value from feedinfo where key=\"lastfetch\"",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
-				log(normal,true,true,"! db error");
+				Log::log(Log::normal,true,true,"! db error");
 				goto out;
 			}
 			sqlite3_step(stmt);
@@ -336,7 +370,7 @@ int main(int argc,char **argv){
 							rssfetched=true;
 							break;
 						}else if (statuscode==304){
-                            log(normal,true,true,"+ unmodified feed, skipping");
+                            Log::log(Log::normal,true,true,"+ unmodified feed, skipping");
                             //touch the output rss file
                             touch(options["--output-rss"].value<string>().c_str());
                             goto out;
@@ -345,31 +379,31 @@ int main(int argc,char **argv){
 				}
 				if (i+1==options["--download-retries"].value<long>())
 					break;
-				log(normal,true,true,"+ retrying in (%d) seconds...",options["--retry-wait"].value<long>());
+				Log::log(Log::normal,true,true,"+ retrying in (%d) seconds...",options["--retry-wait"].value<long>());
 				xsleep(options["--retry-wait"].value<long>()*1000);
 			}
 			int64_t lastmod=downloader.getLastModified();
 			if (lastmod==-1)
 				lastmod=now; //if no 'Last-Modified' header is present, use server time and hope it's set correctly
 			if (!rssfetched){
-				log(normal,true,true,"! fetching feed failed");
+				Log::log(Log::normal,true,true,"! fetching feed failed");
 				goto out;
 			}
 			//-parse rss
 			Tree xml(NULL);
 			if (!xml.fromXML(rssbuff) || xml.getName()!="rss"){
-				log(normal,true,true,"! invalid rss data");
+				Log::log(Log::normal,true,true,"! invalid rss data");
 				goto out;
 			}
 			Tree *channel=xml.firstChild("channel");
 			if (!channel){
-				log(normal,true,true,"! feed doesn't contain a channel");
+				Log::log(Log::normal,true,true,"! feed doesn't contain a channel");
 				goto out;
 			}
 			//-
 			if (sqlite3_prepare_v2(db,"select max(date),count(*) from items;",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
-				log(normal,true,true,"! db error");
+				Log::log(Log::normal,true,true,"! db error");
 				goto out;
 			}
 			sqlite3_step(stmt);
@@ -401,13 +435,13 @@ int main(int argc,char **argv){
 					if (t_title)
 						title=t_title->getText();
 					else{
-						log(normal,true,true,"! item with no title");
+						Log::log(Log::normal,true,true,"! item with no title");
 						continue;
 					}
 					//-
 					Tree *t_url=item->firstChild("enclosure");
 					if (t_url==NULL){
-						log(normal,true,true,"! item has no media file");
+						Log::log(Log::normal,true,true,"! item has no media file");
 						continue;
 					}
 					string url=t_url->getAttribute("url");
@@ -416,7 +450,7 @@ int main(int argc,char **argv){
 					if (sqlite3_prepare_v2(db,"select * from items where title=?;",-1,&stmt,NULL)!=SQLITE_OK ||
 						sqlite3_bind_text(stmt,1,title.c_str(),-1,NULL)!=SQLITE_OK){
 						sqlite3_finalize(stmt);
-						log(normal,true,true,"! db error");
+						Log::log(Log::normal,true,true,"! db error");
 						goto out;
 					}
 					int rc=sqlite3_step(stmt);
@@ -437,7 +471,7 @@ int main(int argc,char **argv){
 						rssitem newitem={title,url,date,attributes};
 						newitems.push_back(newitem);
 					}else{
-						log(normal,true,true,"! db error");
+						Log::log(Log::normal,true,true,"! db error");
 						goto out;
 					}
 				}while((item=item->nextSibling("item")));
@@ -451,12 +485,12 @@ int main(int argc,char **argv){
 			//-process new items
 			if (newitems.size())
 				dbchanged=true;
-			log(normal,true,true,"+ (%d) new items",newitems.size());
+			Log::log(Log::normal,true,true,"+ (%d) new items",newitems.size());
 			newitems.sort(datecmp);
 			list<rssitem>::iterator i=newitems.begin();
 			long maxitems=options["--max-items"].value<long>();
 			while(i!=newitems.end() && (maxitems==0 || distance(newitems.begin(),i)<maxitems)){
-				log(normal,true,true,"+ downloading (%s)",i->title.c_str());
+				Log::log(Log::normal,true,true,"+ downloading (%s)",i->title.c_str());
 				string tname="opusfeed-"+str(RFC822Time::nowgmt());
 				string tfile=options["--tmp-dir"].value<string>()+"/"+tname;
 				bool downloaded=false;
@@ -466,7 +500,7 @@ int main(int argc,char **argv){
 						break;
 					}else{
 						for (int r=0;r<options["--resume-retries"].value<long>();r++){
-							log(normal,true,true,"+ attempting to resume in (%d) seconds...",options["--retry-wait"].value<long>());
+							Log::log(Log::normal,true,true,"+ attempting to resume in (%d) seconds...",options["--retry-wait"].value<long>());
 							xsleep(options["--retry-wait"].value<long>()*1000);
 							if (downloader.resume(i->url.c_str(),tfile.c_str()) && downloader.getStatusCode()==200){
 								downloaded=true;
@@ -478,11 +512,11 @@ int main(int argc,char **argv){
 					}
 					if (d+1==options["--download-retries"].value<long>())
 						break;
-					log(normal,true,true,"+ retrying in (%d) seconds...",options["--retry-wait"].value<long>());
+					Log::log(Log::normal,true,true,"+ retrying in (%d) seconds...",options["--retry-wait"].value<long>());
 					xsleep(options["--retry-wait"].value<long>()*1000);
 				}
 				if (downloaded){
-					log(normal,true,true,"+ converting (%s)",i->title.c_str());
+					Log::log(Log::normal,true,true,"+ converting (%s)",i->title.c_str());
 					string cname=downloader.getRemoteFileName();
 					if (cname.empty()){
 						Regex::match m=Regex::extract("/([^/\\\\]+)$",i->url.c_str(),0);
@@ -509,7 +543,7 @@ int main(int argc,char **argv){
 						sqlite3_stmt *stmt;
 						if (sqlite3_prepare_v2(db,"insert into items values (?,?,?,?,?,?)",-1,&stmt,NULL)!=SQLITE_OK){
 							sqlite3_finalize(stmt);
-							log(normal,true,true,"! db error");
+							Log::log(Log::normal,true,true,"! db error");
 							goto out;
 						}
 						sqlite3_bind_text(stmt,1,i->title.c_str(),-1,NULL);
@@ -526,13 +560,13 @@ int main(int argc,char **argv){
 				i++;
 			}
 			//-cleanup extra items
-			log(verbose,true,true,"+ cleaning up outdated items");
+			Log::log(Log::verbose,true,true,"+ cleaning up outdated items");
 			if (!options["--max-items"].empty()){
 				sqlite3_stmt *stmt;
 				string statement="select file from items where title not in (select title from items order by date desc limit "+str(options["--max-items"].value<long>())+")";
 				if (sqlite3_prepare_v2(db,statement.c_str(),-1,&stmt,NULL)!=SQLITE_OK){
 					sqlite3_finalize(stmt);
-					log(normal,true,true,"! db error");
+					Log::log(Log::normal,true,true,"! db error");
 					goto out;
 				}
 				while (sqlite3_step(stmt)==SQLITE_ROW){
@@ -551,7 +585,7 @@ int main(int argc,char **argv){
 				string statement="select file from items where date<"+str(RFC822Time::nowgmt()-maxage*24*60*60);
 				if (sqlite3_prepare_v2(db,statement.c_str(),-1,&stmt,NULL)!=SQLITE_OK){
 					sqlite3_finalize(stmt);
-					log(normal,true,true,"! db error");
+					Log::log(Log::normal,true,true,"! db error");
 					goto out;
 				}
 				while (sqlite3_step(stmt)==SQLITE_ROW){
@@ -564,10 +598,10 @@ int main(int argc,char **argv){
 				sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			}
 			//-generate rss items
-			log(verbose,true,true,"+ generating rss feed");
+			Log::log(Log::verbose,true,true,"+ generating rss feed");
 			if (sqlite3_prepare_v2(db,"select * from items order by date desc",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
-				log(normal,true,true,"! db error");
+				Log::log(Log::normal,true,true,"! db error");
 				goto out;
 			}
 			while (sqlite3_step(stmt)==SQLITE_ROW){
@@ -633,12 +667,12 @@ int main(int argc,char **argv){
 			ByteArray output=xml.toXML();
 			FILE *fout=fopen(options["--output-rss"].value<string>().c_str(),"wb");
 			if (fout==NULL){
-				log(normal,true,true,"! couldn't open the output rss file");
+				Log::log(Log::normal,true,true,"! couldn't open the output rss file");
 				goto out;
 			}
 			static const string xmldec="<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 			if (fwrite(xmldec.c_str(),xmldec.size(),1,fout)==0 || fwrite(output.buffer(),output.size(),1,fout)==0){
-				log(normal,true,true,"! couldn't write data to the output file");
+				Log::log(Log::normal,true,true,"! couldn't write data to the output file");
 				fclose(fout);
 				goto out;
 			}
@@ -646,7 +680,7 @@ int main(int argc,char **argv){
 			//-update "lastfetch" in the db
 			if (sqlite3_prepare_v2(db,"insert or ignore into feedinfo values(?,?)",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
-				log(normal,true,true,"! db error");
+				Log::log(Log::normal,true,true,"! db error");
 				goto out;
 			}
 			sqlite3_bind_text(stmt,1,"lastfetch",-1,NULL);
@@ -657,7 +691,7 @@ int main(int argc,char **argv){
 			sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			//-execute user command if necessary
 			if (dbchanged && !options["--exec-on-change"].empty()){
-				log(verbose,true,true,"+ executing user command");
+				Log::log(Log::verbose,true,true,"+ executing user command");
 				system(options["--exec-on-change"].value<string>().c_str());
 			}
 		}
@@ -665,8 +699,8 @@ int main(int argc,char **argv){
 		long ui=options["--update-interval"].value<long>();
 		if (ui==0)
 			break;
-		log(normal,true,true,"+ updating in (%d) minutes...",ui);
+		Log::log(Log::normal,true,true,"+ updating in (%d) minutes...",ui);
 		xsleep(ui*60*1000);
 	}
-	return 0;
+	exitgracifly();
 }

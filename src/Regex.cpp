@@ -16,7 +16,7 @@ namespace Regex{
 		int erroffset;
 		pcre *re=pcre_compile(regex,flags,&errstr,&erroffset,0);
 		if (!re){
-			log(normal,true,true,"! invalid regex expression");
+			Log::log(Log::normal,true,true,"! invalid regex expression");
 			return ret;
 		}
 		int matches[100];

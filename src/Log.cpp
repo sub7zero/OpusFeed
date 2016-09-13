@@ -9,55 +9,54 @@
 //------------------------------------------------------------------------------------------//
 #include "Log.h"
 //---
-namespace Log{
-	LogLevel p_loglevel=normal;
-	bool p_colorsenabled=true;
-	//---
-	void setLogLevel(LogLevel l){
-		p_loglevel=l;
+Log::LogLevel Log::p_loglevel=normal;
+bool Log::p_colorsenabled=true;
+bool Log::p_progressenabled=true;
+//---
+void Log::log(LogLevel l,bool newline,bool linebreak,const char *fmt,...){
+	static char buff[256];
+	static bool plinebreak=true;
+	//-
+	if (l<p_loglevel)
+		return;
+	va_list args;
+	va_start(args,fmt);
+	vsnprintf(buff,256,fmt,args);
+	va_end(args);
+	const char *c=fmt;
+	while(*c){
+		if (!isspace((int)*c))
+			break;
+		c++;
 	}
-	//---
-	void setColorsEnabled(bool b){
-		p_colorsenabled=b;
+	if (!p_progressenabled && *c=='>')
+		return;
+	if (!plinebreak && newline){
+		if (p_colorsenabled)
+			setFGColor(WHITE);
+		cout<<endl;
 	}
-	//---
-	void log(LogLevel l,bool newline,bool linebreak,const char *fmt,...){
-		static bool plinebreak=true;
-		if (l<p_loglevel)
-			return;
-		va_list args;
-		va_start(args,fmt);
-		if (!plinebreak && newline){
-			if (p_colorsenabled)
-				setFGColor(WHITE);
-			cout<<'\n';
+	if (p_colorsenabled && (plinebreak || newline)){
+		switch (*c){
+			case '+':
+				setFGColor(GREEN);
+				break;
+			case '-':
+				setFGColor(YELLOW);
+				break;
+			case '>':
+				setFGColor(CYAN);
+				break;
+			case '!':
+				setFGColor(RED);
+				break;
 		}
-		if (p_colorsenabled && (plinebreak || newline)){
-			const char *c=fmt;
-			while(*c){
-				if (!isspace((int)*c))
-					break;
-				c++;
-			}
-			switch (*c){
-				case '+':
-					setFGColor(GREEN);
-					break;
-				case '-':
-					setFGColor(YELLOW);
-					break;
-				case '!':
-					setFGColor(RED);
-					break;
-			}
-		}
-		vprintf(fmt,args);
-		if (linebreak){
-			if (p_colorsenabled)
-				setFGColor(WHITE);
-			cout<<'\n';
-		}
-		va_end(args);
-		plinebreak=linebreak;
 	}
+	cout<<buff;
+	if (linebreak){
+		if (p_colorsenabled)
+			restoreColors();
+		cout<<endl;
+	}
+	plinebreak=linebreak;
 }

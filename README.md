@@ -1,4 +1,6 @@
-## OpusFeed 1.1 ##
+### OpusFeed 1.2 ###
+
+by Alex Izeld, Email : sub7zero.com
 
 **opusfeed** is a cross-platform software for automatically generating a low-quality opus rss feed from another (audio or video) rss feed.
 
@@ -141,6 +143,7 @@ you should at least set the following options :
   <tr><td>--verbose</td><td>verbose output</td></tr>
   <tr><td>--quiet</td><td>suppress output</td></tr>
   <tr><td>--enable-colors</td><td>enable colored output [yes,no] (default:yes)</td></tr>
+  <tr><td>--enable-progress</td><td>show downloading/converting progress [yes,no] (default:yes)</td></tr>
   <tr><td>--help</td><td>this message</td></tr>
 </table>
 

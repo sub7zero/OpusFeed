@@ -96,4 +96,17 @@ namespace ConsoleColor{
 		#endif
 	}
 	//---
+	#ifdef _WIN32
+	HANDLE hstdout=GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	bool ignored=GetConsoleScreenBufferInfo(hstdout,&csbi);
+	WORD default_colors=csbi.wAttributes;
+	#endif
+	void restoreColors(){
+		#ifdef _WIN32
+			SetConsoleTextAttribute(hstdout,default_colors);
+		#else
+			cout<<"\e[m"; //reset
+		#endif
+	}
 }

@@ -32,6 +32,7 @@ namespace ConsoleColor{
 	//-
 	void setFGColor(color c);
 	void setBGColor(color c);
+	void restoreColors();
 };
 
 #endif // CONSOLECOLOR_H

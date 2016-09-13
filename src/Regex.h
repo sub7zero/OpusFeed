@@ -18,7 +18,6 @@
 #include "pcre.h"
 #include "Log.h"
 using namespace std;
-using namespace Log;
 
 namespace Regex{
 	typedef vector<vector<string> > match;

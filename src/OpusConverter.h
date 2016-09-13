@@ -26,7 +26,6 @@ extern "C" {
 #include <libavresample/avresample.h>
 #include <libswscale/swscale.h>
 }
-using namespace Log;
 
 namespace OpusConverter{
 	void init();
