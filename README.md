@@ -1,4 +1,4 @@
-### OpusFeed 1.2 ###
+## OpusFeed 1.2 ##
 
 by Alex Izeld, Email : sub7zero.com
 
