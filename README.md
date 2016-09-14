@@ -1,7 +1,5 @@
 ## OpusFeed 1.2 ##
 
-by Alex Izeld, Email : sub7zero.com
-
 **opusfeed** is a cross-platform software for automatically generating a low-quality opus rss feed from another (audio or video) rss feed.
 
 ### Dependencies : ###
