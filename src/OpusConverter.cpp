@@ -346,7 +346,7 @@ namespace OpusConverter{
 		//add :
 		//  if (header && page->segments_count == 255)
 		//      ogg_buffer_page(s, oggstream);
-		//PS. this patch is applied automatically when building libav via 'build-3rdparty.sh'
+		//PS. this patch is applied automatically via 'make init-3rdparty'
 		if (embed_cover){
 			int ivideo_stream_idx=-1;
 			//-check if there's an embedded cover art
@@ -615,7 +615,12 @@ namespace OpusConverter{
 				AVRational rescale_tb={1,1};
 				int64_t time=av_rescale_q(ipacket.pts,ifmt_ctx->streams[iaudio_stream_idx]->time_base,rescale_tb);
 				if (time!=prevtime){
-					Log::log(Log::normal,false,false,"\r> (%s-%s~) %0.2d%%",time_format(time).c_str(),duration_str.c_str(),(int)(time*100/duration));
+					Log::log(Log::normal,false,false,"\r>%*c\r> (%s-%s~) %0.2d%%",
+													 78,
+													 ' ',
+													 time_format(time).c_str(),
+													 duration_str.c_str(),
+													 (int)(time*100/duration));
 					fflush(stdout);
 					prevtime=time;
 				}

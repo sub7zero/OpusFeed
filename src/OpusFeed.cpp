@@ -265,7 +265,7 @@ int main(int argc,char **argv){
     Log::setColorsEnabled(options["--enable-colors"].value<bool>());
     Log::setProgressEnabled(options["--enable-progress"].value<bool>());
 	//-open db
-	Log::log(Log::verbose,true,true,"+ opening database");
+	Log::log(Log::normal,true,true,"+ opening database");
 	if (sqlite3_open(options["--db-file"].value<string>().c_str(),&db)!=SQLITE_OK){
 		Log::log(Log::normal,true,true,"! unable to open the database file");
 		exitgracifly(-1);
@@ -279,7 +279,7 @@ int main(int argc,char **argv){
 		exitgracifly(-1);
 	}
 	//-cleanup orphan files
-	Log::log(Log::verbose,true,true,"+ cleaning up orphan files");
+	Log::log(Log::normal,true,true,"+ cleaning up orphan files");
 	DIR *dp;
 	if((dp=opendir(options["--media-dir"].value<string>().c_str()))!=NULL){
 		dirent *dirp;
@@ -560,7 +560,7 @@ int main(int argc,char **argv){
 				i++;
 			}
 			//-cleanup extra items
-			Log::log(Log::verbose,true,true,"+ cleaning up outdated items");
+			Log::log(Log::normal,true,true,"+ cleaning up outdated items");
 			if (!options["--max-items"].empty()){
 				sqlite3_stmt *stmt;
 				string statement="select file from items where title not in (select title from items order by date desc limit "+str(options["--max-items"].value<long>())+")";
@@ -598,7 +598,7 @@ int main(int argc,char **argv){
 				sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			}
 			//-generate rss items
-			Log::log(Log::verbose,true,true,"+ generating rss feed");
+			Log::log(Log::normal,true,true,"+ generating rss feed");
 			if (sqlite3_prepare_v2(db,"select * from items order by date desc",-1,&stmt,NULL)!=SQLITE_OK){
 				sqlite3_finalize(stmt);
 				Log::log(Log::normal,true,true,"! db error");
@@ -691,7 +691,7 @@ int main(int argc,char **argv){
 			sqlite3_exec(db,statement.c_str(),NULL,NULL,NULL);
 			//-execute user command if necessary
 			if (dbchanged && !options["--exec-on-change"].empty()){
-				Log::log(Log::verbose,true,true,"+ executing user command");
+				Log::log(Log::normal,true,true,"+ executing user command");
 				system(options["--exec-on-change"].value<string>().c_str());
 			}
 		}
