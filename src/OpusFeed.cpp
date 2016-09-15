@@ -663,6 +663,11 @@ int main(int argc,char **argv){
 									t_idescription->getText();
 				t_idescription->setText(idescription);
 			}
+			Tree *t_title=channel->firstChild("title");
+			if (t_title){
+				string title=t_title->getText()+" - OpusFeed";
+				t_title->setText(title);
+			}
 			//-
 			ByteArray output=xml.toXML();
 			FILE *fout=fopen(options["--output-rss"].value<string>().c_str(),"wb");
