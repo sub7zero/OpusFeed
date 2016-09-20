@@ -1,8 +1,9 @@
-## OpusFeed 1.2 ##
+## OpusFeed 1.3 ##
 
 **opusfeed** is a cross-platform software for automatically generating a low-quality opus rss feed from another (audio or video) rss feed.
 
 ### Dependencies : ###
+- zlib
 - libopus
 - libav
 - pcre
@@ -27,7 +28,7 @@
 cd to the directory where you downloaded the source and run the following commands:
 
 	$ make init
-	$ make 3rdparty-all
+	$ make 3rdparty
 	$ make opusfeed
 the first command will extract and prepare the dependencies in `./tmp/` each to a separate folder and the project's makefiles in `./tmp/opusfeed/`.  
 the second line will build the dependencies and install them to `./3rdparty/`, log files will be stored in `./logs`.  

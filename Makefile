@@ -15,6 +15,7 @@ opusfeed:
 	cd $(DIR_TMP)/opusfeed && make install 2>&1 | tee $(DIR_LOG)/opusfeed.txt
 #---
 clean-3rdparty:
+	- rm -rf $(DIR_TMP)/zlib-*
 	- rm -rf $(DIR_TMP)/sqlite-*
 	- rm -rf $(DIR_TMP)/openssl-*
 	- rm -rf $(DIR_TMP)/curl-*
@@ -22,6 +23,7 @@ clean-3rdparty:
 	- rm -rf $(DIR_TMP)/pcre-*
 	- rm -rf $(DIR_TMP)/tinyxml2-*
 	- rm -rf $(DIR_TMP)/opus-*
+	- rm -f $(DIR_LOG)/zlib.txt
 	- rm -f $(DIR_LOG)/sqlite.txt
 	- rm -f $(DIR_LOG)/openssl.txt
 	- rm -f $(DIR_LOG)/curl.txt
@@ -47,6 +49,7 @@ init-3rdparty: clean-3rdparty
 	if [ ! -e $(DIR_TMP) ]; then mkdir $(DIR_TMP); fi;
 	if [ ! -e $(DIR_LOG) ]; then mkdir $(DIR_LOG); fi;
 	if [ ! -e $(DIR_3RDPARTY) ]; then mkdir $(DIR_3RDPARTY); fi;
+	cd $(DIR_TMP) && tar xvfz $(DIR_ARCHIVES)/zlib*.tar.gz
 	cd $(DIR_TMP) && tar xvfz $(DIR_ARCHIVES)/sqlite*.tar.gz
 	cd $(DIR_TMP) && tar xvfz $(DIR_ARCHIVES)/pcre*.tar.gz
 	cd $(DIR_TMP) && tar xvfz $(DIR_ARCHIVES)/openssl*.tar.gz
@@ -67,7 +70,17 @@ init-opusfeed: clean-opusfeed
 #---
 init: init-3rdparty init-opusfeed
 #---
-3rdparty-all: 3rdparty-sqlite 3rdparty-pcre 3rdparty-openssl 3rdparty-curl 3rdparty-tinyxml2 3rdparty-opus 3rdparty-libav
+3rdparty: 3rdparty-zlib 3rdparty-sqlite 3rdparty-pcre 3rdparty-openssl 3rdparty-curl 3rdparty-tinyxml2 3rdparty-opus 3rdparty-libav
+#---
+3rdparty-zlib:
+	rm -f $(DIR_LOG)/zlib.txt >/dev/null 2>&1
+	if [ "$(shell expr substr $(shell uname -s) 1 10)" != "MINGW32_NT" ]; then \
+	cd $(DIR_TMP)/zlib* && ./configure --prefix=$(DIR_3RDPARTY) --static 2>&1 | tee $(DIR_LOG)/zlib.txt; \
+	make 2>&1 | tee -a $(DIR_LOG)/zlib.txt; \
+	make install 2>&1 | tee -a $(DIR_LOG)/zlib.txt; \
+	else \
+	cd $(DIR_TMP)/zlib* && make install -f win32/Makefile.gcc DESTDIR=$(DIR_3RDPARTY)/ INCLUDE_PATH=include LIBRARY_PATH=lib BINARY_PATH=bin 2>&1 | tee $(DIR_LOG)/zlib.txt; \
+	fi;
 #---
 3rdparty-sqlite:
 	rm -f $(DIR_LOG)/sqlite.txt >/dev/null 2>&1

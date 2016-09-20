@@ -14,6 +14,8 @@ add_executable(OpusFeed
 					Regex.cpp
 					RFC822Time.cpp
 					Tree.cpp
+					SqliteDB.cpp
+					SqliteStatement.cpp
 					WinResources.rc)
 target_link_libraries(OpusFeed
 							avformat
@@ -52,4 +54,3 @@ endif (CMAKE_BUILD_TYPE STREQUAL "Debug")
 set_target_properties(OpusFeed PROPERTIES OUTPUT_NAME "opusfeed")
 install(TARGETS OpusFeed
 		RUNTIME DESTINATION bin)
-		
