@@ -741,7 +741,7 @@ int main(int argc,char **argv){
 				Tree *t_title=e->insertChild("title");
 				t_title->setText(s.getStr(1));
 				Tree *t_url=e->insertChild("enclosure");
-				t_url->setAttribute("url",options["--media-prefix"].value<string>()+"/"+s.getStr(6));
+				t_url->setAttribute("url",options["--media-prefix"].value<string>()+"/"+s.getStr(2));
 				t_url->setAttribute("length",s.getStr(3));
 				t_url->setAttribute("type","audio/opus");
 				Tree *t_date=e->insertChild("pubDate");
