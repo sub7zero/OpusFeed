@@ -157,5 +157,4 @@ namespace RFC822Time{
 		}
 		return -1;
 	}
-	//---
 }

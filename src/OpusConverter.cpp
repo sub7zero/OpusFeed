@@ -149,11 +149,15 @@ namespace OpusConverter{
 		return string(tmp);
 	}
 	//---
+	bool initialized=false;
 	void init(){
-		av_register_all();
-		#ifndef DEBUG
-		av_log_set_level(AV_LOG_QUIET);
-		#endif // DEBUG
+		if (!initialized){
+			initialized=true;
+			av_register_all();
+			#ifndef DEBUG
+			av_log_set_level(AV_LOG_QUIET);
+			#endif // DEBUG
+		}
 	}
 	//---
 	bool convert(const char *ifile,const char *ofile,int samplerate,int channels,int bitrate,bool embed_cover,bool use_video,int cover_w,int cover_h,bool preserve_ar,int cover_quality){

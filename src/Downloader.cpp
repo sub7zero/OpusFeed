@@ -17,15 +17,17 @@ Downloader::Downloader(){
 	m_followlocation=true;
 	m_speedlimit=0;
 	m_ignoresslerrors=true;
-	m_enableproxy=false;
+	m_useauth=false;
+	m_useproxy=false;
 	m_proxytype=proxy_http;
-	m_authtype=auth_basic;
+	m_useproxyauth=false;
 	m_ipversion=ip_auto;
+	m_buffer=NULL;
 }
 //---
 size_t Downloader::writefnc(char *buff,size_t size,size_t nitems,void *userdata){
 	Downloader *obj=static_cast<Downloader *>(userdata);
-	if (obj->m_statuscode!=200)
+	if (obj->m_statuscode!=200 && obj->m_statuscode!=206)
 		return size*nitems; //don't write the body of error messages
 	if (obj->m_fileh){
 		size_t written=fwrite(buff,size,nitems,obj->m_fileh);
@@ -172,7 +174,7 @@ bool Downloader::resume(const char *url,ByteArray *buffer){
 		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		if (m_statuscode!=200)
+		if (m_statuscode!=200 && m_statuscode!=206)
 			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	curl_easy_cleanup(m_curl);
@@ -255,7 +257,7 @@ bool Downloader::resume(const char *url,const char *file){
 		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		if (m_statuscode!=200)
+		if (m_statuscode!=200 && m_statuscode!=206)
 			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	fclose(m_fileh);
@@ -298,7 +300,7 @@ bool Downloader::downloadIfModified(const char *url,ByteArray *buffer,int64_t ti
 		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		if (m_statuscode!=200)
+		if (m_statuscode!=200 && m_statuscode!=304)
 			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	curl_easy_cleanup(m_curl);
@@ -341,7 +343,7 @@ bool Downloader::downloadIfModified(const char *url,const char *file,int64_t tim
 		Log::log(Log::normal,true,true,"! downloading error : %s",curl_easy_strerror(err));
 		ret=false;
 	}else{
-		if (m_statuscode!=200)
+		if (m_statuscode!=200 && m_statuscode!=304)
 			Log::log(Log::normal,true,true,"! http code (%d) returned",m_statuscode);
 	}
 	fclose(m_fileh);
@@ -407,15 +409,28 @@ bool Downloader::init(){
 			return false;
 		}
 	}
-	if (m_enableproxy){
-		if (!curl_setopt(long,m_curl,CURLOPT_PROXYTYPE,m_proxytype) ||
-			!curl_setopt(const char *,m_curl,CURLOPT_PROXY,m_proxyhost.c_str()) ||
-			!curl_setopt(long,m_curl,CURLOPT_PROXYPORT,m_proxyport) ||
-			!curl_setopt(long,m_curl,CURLOPT_PROXYAUTH,m_authtype) ||
-			!curl_setopt(const char *,m_curl,CURLOPT_PROXYUSERNAME,m_authuser.c_str()) ||
-			!curl_setopt(const char *,m_curl,CURLOPT_PROXYPASSWORD,m_authpass.c_str())){
+	if (m_useauth){
+		if (!curl_setopt(long,m_curl,CURLOPT_HTTPAUTH,CURLAUTH_BASIC|CURLAUTH_DIGEST|CURLAUTH_DIGEST_IE|CURLAUTH_NEGOTIATE|CURLAUTH_NTLM) ||
+			!curl_setopt(const char *,m_curl,CURLOPT_USERNAME,m_user.c_str()) ||
+			!curl_setopt(const char *,m_curl,CURLOPT_PASSWORD,m_pass.c_str())){
 			curl_easy_cleanup(m_curl);
 			return false;
+		}
+	}
+	if (m_useproxy){
+		if (!curl_setopt(long,m_curl,CURLOPT_PROXYTYPE,m_proxytype) ||
+			!curl_setopt(const char *,m_curl,CURLOPT_PROXY,m_proxyhost.c_str()) ||
+			!curl_setopt(long,m_curl,CURLOPT_PROXYPORT,m_proxyport)){
+			curl_easy_cleanup(m_curl);
+			return false;
+		}
+		if (m_useproxyauth){
+			if (!curl_setopt(long,m_curl,CURLOPT_PROXYAUTH,CURLAUTH_BASIC|CURLAUTH_DIGEST|CURLAUTH_DIGEST_IE|CURLAUTH_NEGOTIATE|CURLAUTH_NTLM) ||
+				!curl_setopt(const char *,m_curl,CURLOPT_PROXYUSERNAME,m_proxyauthuser.c_str()) ||
+				!curl_setopt(const char *,m_curl,CURLOPT_PROXYPASSWORD,m_proxyauthpass.c_str())){
+				curl_easy_cleanup(m_curl);
+				return false;
+			}
 		}
 	}
 	if (!curl_setopt(long,m_curl,CURLOPT_IPRESOLVE,m_ipversion)){

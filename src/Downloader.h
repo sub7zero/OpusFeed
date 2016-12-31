@@ -31,10 +31,6 @@ class Downloader{
 			proxy_socks5=CURLPROXY_SOCKS5,
 			proxy_socks5h=CURLPROXY_SOCKS5_HOSTNAME
 		};
-		enum HTTPAuthType{
-			auth_basic=CURLAUTH_BASIC,
-			auth_ntlm=CURLAUTH_NTLM
-		};
 		enum IPVersion{
 			ip_auto=CURL_IPRESOLVE_WHATEVER,
 			ip_v4=CURL_IPRESOLVE_V4,
@@ -56,13 +52,16 @@ class Downloader{
 		void setIgnoreSslErrors(bool b){m_ignoresslerrors=b;}                           // default true
 		void setUserAgent(const char *useragent){if (useragent) m_useragent=useragent;}
 		void setCookies(const char *cookies){if (cookies) m_cookies=cookies;}
-		void setEnableProxy(bool b){m_enableproxy=b;}                                   // default false
+		void setUseAuth(bool b){m_useauth=b;}
+		void setUser(const char *user){m_user=user?user:"";}
+		void setPass(const char *pass){m_pass=pass?pass:"";}
+		void setUseProxy(bool b){m_useproxy=b;}                                   // default false
 		void setProxyHost(const char *host){if (host) m_proxyhost=host;}
 		void setProxyPort(int port){m_proxyport=port;}
 		void setProxyType(ProxyType proxytype){m_proxytype=proxytype;}                  // default http
-		void setAuthType(HTTPAuthType authtype){m_authtype=authtype;}                   // default basic
-		void setAuthUser(const char *user){if (user) m_authuser=user;}
-		void setAuthPass(const char *pass){if (pass) m_authpass=pass;}
+		void setUseProxyAuth(bool b){m_useproxyauth=b;}										// default false
+		void setProxyAuthUser(const char *user){m_proxyauthuser=user?user:"";}
+		void setProxyAuthPass(const char *pass){m_proxyauthpass=pass?pass:"";}
 		void setIPVersion(IPVersion ver){m_ipversion=ver;}
 		//-
 		string getRemoteFileName(){return m_remotefilename;}
@@ -95,13 +94,16 @@ class Downloader{
 		bool m_ignoresslerrors;
 		string m_useragent;
 		string m_cookies;
-		bool m_enableproxy;
+		bool m_useauth;
+		string m_user;
+		string m_pass;
+		bool m_useproxy;
 		string m_proxyhost;
 		int m_proxyport;
 		ProxyType m_proxytype;
-		HTTPAuthType m_authtype;
-		string m_authuser;
-		string m_authpass;
+		bool m_useproxyauth;
+		string m_proxyauthuser;
+		string m_proxyauthpass;
 		IPVersion m_ipversion;
 };
 

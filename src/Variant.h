@@ -51,6 +51,9 @@ class Variant{
 			}
 			return *this;
 		}
+		operator bool(){
+			return data!=NULL;
+		}
 		const type_info &type() const{
 			if (!data)
 				throw bad_typeid();

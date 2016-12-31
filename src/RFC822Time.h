@@ -31,7 +31,6 @@ namespace RFC822Time{
 	xtime sec2xtime(int64_t t);
 	int64_t nowgmt();
 	string format(int64_t gmt,const char *timez=NULL,int offset=0); //offset is in minutes
-
 };
 
 #endif // RFC822TIME_H

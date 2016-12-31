@@ -32,3 +32,6 @@ bool SqliteDB::exec(const char *str){
 	return (sqlite3_exec(m_db,str,NULL,NULL,NULL)==SQLITE_OK);
 }
 //---
+int SqliteDB::changes(){
+	return sqlite3_changes(m_db);
+}

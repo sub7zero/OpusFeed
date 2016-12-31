@@ -23,7 +23,7 @@ class SqliteDB{
 		bool open(const char *file);
 		void close();
 		bool exec(const char *str);
-
+		int changes();
 		sqlite3 *db(){return m_db;}
 	private:
 		sqlite3 *m_db;

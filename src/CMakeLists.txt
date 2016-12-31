@@ -6,6 +6,9 @@ link_directories(../3rdparty/lib)
 include_directories(./)
 add_executable(OpusFeed
 					OpusFeed.cpp
+					Feed.cpp
+					FileUtil.cpp
+					StrUtil.cpp
 					OpusConverter.cpp
 					Downloader.cpp
 					ByteArray.cpp

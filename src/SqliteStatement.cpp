@@ -34,6 +34,10 @@ bool SqliteStatement::bindInt64(int n,int64_t i){
 	return (sqlite3_bind_int64(m_stmt,n,i)==SQLITE_OK);
 }
 //---
+bool SqliteStatement::bindBool(int n,bool b){
+	return (sqlite3_bind_text(m_stmt,n,b?"true":"false",-1,NULL)==SQLITE_OK);
+}
+//---
 const char *SqliteStatement::getStr(int col){
 	return (const char *)sqlite3_column_text(m_stmt,col);
 }
@@ -44,6 +48,10 @@ int SqliteStatement::getInt(int col){
 //---
 int64_t SqliteStatement::getInt64(int col){
 	return sqlite3_column_int64(m_stmt,col);
+}
+//---
+bool SqliteStatement::getBool(int col){
+	return strcmp((const char *)sqlite3_column_text(m_stmt,col),"true")==0;
 }
 //---
 int SqliteStatement::step(){

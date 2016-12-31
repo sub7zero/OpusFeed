@@ -16,7 +16,11 @@ ByteArray::ByteArray(){
 	p_buff=NULL;
 };
 //---
-ByteArray::ByteArray(const ByteArray &r):ByteArray(){
+ByteArray::ByteArray(const ByteArray &r){
+	p_offset=0;
+	p_buffsize=0;
+	p_alignment=1024*512; //512 kb
+	p_buff=NULL;
 	append(r.buffer(),r.size());
 }
 //---

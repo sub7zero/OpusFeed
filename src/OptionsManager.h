@@ -19,11 +19,15 @@
 #include <vector>
 #include <sstream>
 #include <typeinfo>
+
+#include "Log.h"
 #include "Variant.h"
+#include "SmartPtr.h"
 using namespace std;
 
 class AbstractParam{
 	public:
+		virtual ~AbstractParam(){}
 		virtual string str(const Variant &v){return string();}
 		virtual Variant val(const string &s){return Variant();}
 		virtual bool valid(const string &s){return true;}
@@ -190,61 +194,121 @@ template<class T> class MapParam:public AbstractParam{
 //---
 class OptionsManager{
 	public:
-		OptionsManager(){
-			hungry=NULL;
+		OptionsManager():m_active(NULL){
+		}
+		OptionsManager(const OptionsManager &r){
+			vector<Option*>::const_iterator i=r.m_olist.begin();
+			while(i!=r.m_olist.end()){
+				Option *o=new Option(**i);
+				m_olist.push_back(o);
+				m_omap[o->name]=o;
+				i++;
+			}
+			m_active=(r.m_active==NULL)?NULL:m_omap[r.m_active->name];
+		}
+		OptionsManager &operator=(OptionsManager &r){
+			vector<Option*>::iterator d=m_olist.begin();
+			while(d!=m_olist.end()){
+				delete *d;
+				d++;
+			}
+			m_olist.clear();
+			m_omap.clear();
+			vector<Option*>::const_iterator i=r.m_olist.begin();
+			while(i!=r.m_olist.end()){
+				Option *o=new Option(**i);
+				m_olist.push_back(o);
+				m_omap[o->name]=o;
+				i++;
+			}
+			m_active=(r.m_active==NULL)?NULL:m_omap[r.m_active->name];
+			return *this;
 		}
 		~OptionsManager(){
-			vector<Option*>::iterator i=options_list.begin();
-			while(i!=options_list.end()){
+			vector<Option*>::iterator i=m_olist.begin();
+			while(i!=m_olist.end()){
 				delete *i;
 				i++;
 			}
 		}
-		void reg(const char *name,AbstractParam *type,const char *description,const Variant &defaultvalue,bool required){
+		void registerOption(const string &name,const SmartPtr<AbstractParam> &param,const Variant &defaultvalue,const string &description){
 			Option *o=new Option;
 			o->name=name;
-			o->type=type;
-			o->description=description;
+			o->param=param;
 			o->value=defaultvalue;
-			o->required=required;
-			options_list.push_back(o);
-			options_map[name]=o;
+			o->description=description;
+			m_olist.push_back(o);
+			m_omap[name]=o;
 		}
-		void reg(const char *name,const char *description){
-			reg(name,NULL,description,false,false);
+		void registerOption(bool required,const string &name,const SmartPtr<AbstractParam> &param,const string &description){
+			Option *o=new Option;
+			o->name=name;
+			o->param=param;
+			o->description=description;
+			o->required=required;
+			m_olist.push_back(o);
+			m_omap[name]=o;
+		}
+		void registerOption(const string &name,const string &description){
+			Option *o=new Option;
+			o->name=name;
+			o->description=description;
+			m_olist.push_back(o);
+			m_omap[name]=o;
+		}
+		void registerHeader(const string &name){
+			Option *o=new Option;
+			o->name=name;
+			o->header=true;
+			m_olist.push_back(o);
+		}
+		void setDependency(const string &parent,const string &child){ // ensures : (parent.value.value<bool>() == true) <-> (children.value)
+			m_omap[parent]->children.push_back(child);
+			m_omap[child]->parent=parent;
 		}
 		Variant operator[](const string &s){
 			map<string,Option*>::iterator i;
-			if ((i=options_map.find(s))==options_map.end())
+			if ((i=m_omap.find(s))==m_omap.end())
 				return Variant();
 			return i->second->value;
 		}
 		void print(){
-			vector<Option*>::iterator iter=options_list.begin();
+			vector<Option*>::iterator i=m_olist.begin();
 			int maxlen=0;
-			while(iter!=options_list.end()){
-				int len=(*iter)->name.size();
-				if (len>maxlen) maxlen=len;
-				iter++;
+			int maxhlen=0;
+			while(i!=m_olist.end()){
+				if ((*i)->header){
+					int len=(*i)->name.size();
+					if (len>maxhlen) maxhlen=len;
+				}else{
+					int len=(*i)->name.size();
+					if (len>maxlen) maxlen=len;
+				}
+				i++;
 			}
-			iter=options_list.begin();
 			//-
-			while(iter!=options_list.end()){
-				Option *o=(*iter);
+			i=m_olist.begin();
+			while(i!=m_olist.end()){
+				Option *o=(*i);
+				if (o->header){
+					cout<<std::left<<"  "<<setw(maxhlen)<<o->name<<" : "<<endl;
+					i++;
+					continue;
+				}
 				ostringstream stream;
-				stream<<std::left<<"  "<<setw(maxlen)<<o->name<<" : ";
+				stream<<std::left<<"    "<<setw(maxlen)<<o->name<<" : ";
 				int startat=stream.tellp();
 				cout<<stream.str();
 				stream.str("");
 				stream.clear();
 				int breakat=79;
 				stream<<o->description;
-				if (o->type!=NULL){
-					string ops=o->type->options();
+				if (o->param!=NULL){
+					string ops=o->param->options();
 					if (!ops.empty())
 						stream<<" ["<<ops<<"]";
 					if (!o->value.empty())
-						stream<<" (default:"<<o->type->str(o->value)<<")";
+						stream<<" (default:"<<o->param->str(o->value)<<")";
 				}
 				//-
 				string str=stream.str();
@@ -280,24 +344,63 @@ class OptionsManager{
 					}
 				}
 				cout<<endl;
-				iter++;
+				i++;
 			}
 		}
-		bool append(const char *arg){
-			if (hungry!=NULL){
-				string val(arg);
-				if (!hungry->type->valid(val)){
-					cout<<"invalid value ("<<val<<") for option : "<<hungry->name<<endl;
-					hungry=NULL;
+		bool validate(){
+			bool ret=true;
+			vector<Option*>::iterator i=m_olist.begin();
+			while(i!=m_olist.end()){
+				Option *o=*i;
+				if (o->header){
+					i++;
+					continue;
+				}
+				if (o->required && o->value.empty()){
+					Log::log(Log::normal,true,true,"! option '%s' is required",o->name.c_str());
+					ret=false;
+				}
+				if (o->value && !o->parent.empty()){
+					map<string,Option*>::iterator u=m_omap.find(o->parent);
+					if (u==m_omap.end() || !u->second->value.value<bool>()){
+						Log::log(Log::normal,true,true,"! option '%s' must be set for '%s' to work",o->parent.c_str(),o->name.c_str());
+						ret=false;
+					}
+				}
+				if (!o->children.empty() && o->value.value<bool>()){
+                    vector<string>::iterator l=o->children.begin();
+                    while(l!=o->children.end()){
+						map<string,Option*>::iterator u=m_omap.find(*l);
+						if (u==m_omap.end() || !u->second->value){
+							Log::log(Log::normal,true,true,"! option '%s' requires '%s' to be set",o->name.c_str(),l->c_str());
+							ret=false;
+						}
+						l++;
+                    }
+				}
+				i++;
+			}
+			if (m_active){
+				Log::log(Log::normal,true,true,"! option '%s' wasn't assigned a value",m_active->name.c_str());
+				ret=false;
+			}
+			return ret;
+		}
+		bool append(const string &arg){
+			const char *argc=arg.c_str();
+			if (m_active!=NULL){
+				if (!m_active->param->valid(arg)){
+					Log::log(Log::normal,true,true,"! invalid value [%s] for option '%s'",argc,m_active->name.c_str());
+					m_active=NULL;
 					return false;
 				}
-				hungry->value=hungry->type->val(val);
-				hungry=NULL;
+				m_active->value=m_active->param->val(arg);
+				m_active=NULL;
 				return true;
 			}
 			//-
 			const char *v=NULL;
-			const char *p=arg;
+			const char *p=argc;
 			while(*p){
 				if (*p=='=' && *(p+1)){
 					v=p+1;
@@ -306,54 +409,48 @@ class OptionsManager{
 				p++;
 			}
 			if (v){
-				string key(arg,v-arg-1);
-				map<string,Option*>::iterator i=options_map.find(key);
-				if (i==options_map.end()){
-					cout<<"invalid option : "<<key<<endl;
+				string key(argc,v-argc-1);
+				map<string,Option*>::iterator i=m_omap.find(key);
+				if (i==m_omap.end()){
+					Log::log(Log::normal,true,true,"! invalid option '%s'",key.c_str());
 					return false;
 				}
 				string val(v);
-				if (!i->second->type->valid(val)){
-					cout<<"invalid value ("<<val<<") for option : "<<key<<endl;
+				if (!i->second->param->valid(val)){
+					Log::log(Log::normal,true,true,"! invalid value [%s] for option '%s'",val.c_str(),key.c_str());
 					return false;
 				}
-				i->second->value=i->second->type->val(val);
+				i->second->value=i->second->param->val(val);
 			}else{
-				string key(arg);
-				map<string,Option*>::iterator i=options_map.find(key);
-				if (i==options_map.end()){
-					cout<<"invalid option : "<<key<<endl;
+				string key(argc);
+				map<string,Option*>::iterator i=m_omap.find(key);
+				if (i==m_omap.end()){
+					Log::log(Log::normal,true,true,"! invalid option '%s'",key.c_str());
 					return false;
 				}
-				if (i->second->type!=NULL)
-					hungry=i->second;
+				if (i->second->param!=NULL)
+					m_active=i->second;
 				else
 					i->second->value=true;
 			}
 			return true;
 		}
-		bool validate(){
-			vector<Option*>::iterator i=options_list.begin();
-			while(i!=options_list.end()){
-				if ((*i)->required && (*i)->value.empty()){
-					cout<<"option : "<<(*i)->name<<" must be set"<<endl;
-					return false;
-				}
-				i++;
-			}
-			return true;
-		}
 	private:
 		struct Option{
+			Option():param(NULL),required(false),header(false){}
 			string name;
-			AbstractParam *type;
 			string description;
-			Variant value;
-			bool required;
+			SmartPtr<AbstractParam> param;
+            Variant value;
+            bool required;
+            bool header;
+            //-
+            vector<string> children;
+            string parent;
 		};
-		Option *hungry;
-		vector<Option*> options_list;
-		map<string,Option*> options_map;
+	private:
+		vector<Option*> m_olist;
+		map<string,Option*> m_omap;
+		Option *m_active;
 };
-
 #endif // OPTIONSMANAGER_H
