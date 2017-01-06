@@ -38,7 +38,7 @@ class Feed{
 			string file;
 			int64_t size;
 			int64_t date;
-			unsigned long crc;
+			int64_t crc;
 			string url;
 			string attributes;
 			bool downloaded;

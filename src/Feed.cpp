@@ -109,7 +109,7 @@ bool Feed::execLoop(){
 							int64_t originalsize=StrUtil::val(t_url->getAttribute("length"));
 							//-
 							ByteArray itemxml=item->toXML();
-							unsigned long crc=crc32(0L,(const Bytef *)itemxml.buffer(),itemxml.size());
+							int64_t crc=crc32(0L,(const Bytef *)itemxml.buffer(),itemxml.size());
 							//-
 							bool found=false;
 							list<rssitem>::iterator i=rssitems.begin();
@@ -229,7 +229,7 @@ bool Feed::execLoop(){
 			string tfile=m_options["--tmp-dir"].value<string>()+"/"+tname;
 			if (i->replaced){
 				if (i->converted){
-					string file=m_options["--tmp-dir"].value<string>()+"/"+i->file;
+					string file=m_options["--media-dir"].value<string>()+"/"+i->file;
 					remove(file.c_str());
 					i->converted=false;
 				}
@@ -258,7 +258,7 @@ bool Feed::execLoop(){
 					i++;
 					continue;
 				}else if (i->updated && i->converted){
-					string file=m_options["--tmp-dir"].value<string>()+"/"+i->file;
+					string file=m_options["--media-dir"].value<string>()+"/"+i->file;
 					remove(file.c_str());
 				}
 			}
@@ -845,7 +845,7 @@ bool Feed::readDBItems(list<rssitem> &rssitems){
 		i.file=s.getStr(2);
 		i.size=s.getInt64(3);
 		i.date=s.getInt64(4);
-		i.crc=s.getInt(5);
+		i.crc=s.getInt64(5);
 		i.url=s.getStr(6);
 		i.attributes=s.getStr(7);
 		i.downloaded=s.getBool(8);
@@ -870,7 +870,7 @@ bool Feed::submitDBItem(const rssitem &i){
 		!s.bindStr(3,i.file.c_str()) ||
 		!s.bindInt64(4,i.size) ||
 		!s.bindInt64(5,i.date) ||
-		!s.bindInt(6,i.crc) ||
+		!s.bindInt64(6,i.crc) ||
 		!s.bindStr(7,i.url.c_str()) ||
 		!s.bindStr(8,i.attributes.c_str()) ||
 		!s.bindBool(9,i.downloaded) ||
