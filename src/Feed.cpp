@@ -180,6 +180,12 @@ bool Feed::execLoop(){
 						channel->deleteChild(item);
 						item=channel->firstChild("item");
 					}
+					//-cleanup unnecessary elements that might invalidate the checksum for dynamically generated feeds
+					if ((item=channel->firstChild("pubDate")))
+						channel->deleteChild(item);
+					if ((item=channel->firstChild("lastBuildDate")))
+						channel->deleteChild(item);
+					//-rss data & rss checksum to db
 					ByteArray rssdata=xml.toXML();
 					if (rssdata.size()){
 						int64_t rsscrc_db=0;
@@ -304,7 +310,7 @@ bool Feed::execLoop(){
 		}
 		//-update 'lastfetch' (after processing the items)
 		if (fetched)
-			setFeedPropertyVal("lastfetch",lastfetch);
+			setFeedPropertyVal("lastfetch",lastfetch,false);
 		//-cleanup
 		Log::log(Log::normal,true,true,"+ cleaning up outdated items");
 		if (!cleanupExtraItems())
@@ -712,7 +718,7 @@ int Feed::download(const char *url,ByteArray *buffer,bool attemptresume){
 	return 0;
 }
 //---
-bool Feed::setFeedPropertyStr(const string &key,const string &val){
+bool Feed::setFeedPropertyStr(const string &key,const string &val,bool invalidatedb){
 	SqliteStatement s(m_db);
 	if (!s.prepare("insert or replace into feedinfo values(?,?)") ||
 		!s.bindStr(1,key.c_str()) ||
@@ -721,11 +727,12 @@ bool Feed::setFeedPropertyStr(const string &key,const string &val){
 		Log::log(Log::normal,true,true,"! db error");
 		return false;
 	}
-	m_datachanged=true;
+	if (invalidatedb)
+		m_datachanged=true;
 	return true;
 }
 //---
-bool Feed::setFeedPropertyVal(const string &key,int64_t val){
+bool Feed::setFeedPropertyVal(const string &key,int64_t val,bool invalidatedb){
 	SqliteStatement s(m_db);
 	if (!s.prepare("insert or replace into feedinfo values(?,?)") ||
 		!s.bindStr(1,key.c_str()) ||
@@ -734,11 +741,12 @@ bool Feed::setFeedPropertyVal(const string &key,int64_t val){
 		Log::log(Log::normal,true,true,"! db error");
 		return false;
 	}
-	m_datachanged=true;
+	if (invalidatedb)
+		m_datachanged=true;
 	return true;
 }
 //---
-bool Feed::setFeedPropertyBool(const string &key,bool val){
+bool Feed::setFeedPropertyBool(const string &key,bool val,bool invalidatedb){
 	SqliteStatement s(m_db);
 	if (!s.prepare("insert or replace into feedinfo values(?,?)") ||
 		!s.bindStr(1,key.c_str()) ||
@@ -747,7 +755,8 @@ bool Feed::setFeedPropertyBool(const string &key,bool val){
 		Log::log(Log::normal,true,true,"! db error");
 		return false;
 	}
-	m_datachanged=true;
+	if (invalidatedb)
+		m_datachanged=true;
 	return true;
 }
 //---

@@ -66,9 +66,9 @@ class Feed{
 		bool getFeedPropertyStr(const string &key,string &out);
 		bool getFeedPropertyVal(const string &key,int64_t &out);
 		bool getFeedPropertyBool(const string &key,bool &out);
-		bool setFeedPropertyStr(const string &key,const string &val);
-		bool setFeedPropertyVal(const string &key,int64_t val);
-		bool setFeedPropertyBool(const string &key,bool val);
+		bool setFeedPropertyStr(const string &key,const string &val,bool invalidatedb=true);
+		bool setFeedPropertyVal(const string &key,int64_t val,bool invalidatedb=true);
+		bool setFeedPropertyBool(const string &key,bool val,bool invalidatedb=true);
 		string getAvailableFileName(const string &dir,const string &prefix,const string &ext=string());
 		bool readDBItems(list<rssitem> &rssitems);
 		bool convert(const string &input,const string &output);
