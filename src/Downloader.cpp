@@ -54,6 +54,9 @@ size_t Downloader::headerfnc(char *buff,size_t size,size_t nitems,void *userdata
 	matches=Regex::extract("Content-Disposition: .*filename\\s*=\\s*\"([^;]+)\\s*\"",string(buff,asize).c_str(),PCRE_MULTILINE); //buff may not be null terminated
 	if (matches.size())
 		obj->m_remotefilename=matches[0][1].c_str();
+	matches=Regex::extract("Content-Type: ([^;]+)",string(buff,asize).c_str(),PCRE_MULTILINE); //buff may not be null terminated
+	if (matches.size())
+		obj->m_contenttype=matches[0][1].c_str();
 	matches=Regex::extract("^HTTP/\\d\\.\\d\\s(\\d+)",string(buff,asize).c_str(),PCRE_MULTILINE);
 	if (matches.size())
 		obj->m_statuscode=atol(matches[0][1].c_str());
@@ -126,6 +129,7 @@ bool Downloader::download(const char *url,ByteArray *buffer){
 	}
 	//-
 	m_remotefilename.clear();
+	m_contenttype.clear();
 	m_contentlen=0;
 	m_startoffset=0;
 	m_offset=0;
@@ -156,6 +160,7 @@ bool Downloader::resume(const char *url,ByteArray *buffer){
 	}
 	//-
 	m_remotefilename.clear();
+	m_contenttype.clear();
 	m_contentlen=0;
 	m_buffer=buffer;
 	m_startoffset=m_buffer->size();
@@ -190,6 +195,7 @@ bool Downloader::download(const char *url,const char *file){
 	}
 	//-
 	m_remotefilename.clear();
+	m_contenttype.clear();
 	m_contentlen=0;
 	m_startoffset=0;
 	m_offset=0;
@@ -224,6 +230,7 @@ bool Downloader::resume(const char *url,const char *file){
 	}
 	//-
 	m_remotefilename.clear();
+	m_contenttype.clear();
 	m_contentlen=0;
 	if((m_fileh=fopen(file,"r"))){
 		fseek(m_fileh,0,SEEK_END);
@@ -286,6 +293,7 @@ bool Downloader::downloadIfModified(const char *url,ByteArray *buffer,int64_t ti
 	}
 	//-
 	m_remotefilename.clear();
+	m_contenttype.clear();
 	m_contentlen=0;
 	m_startoffset=0;
 	m_offset=0;
@@ -327,6 +335,7 @@ bool Downloader::downloadIfModified(const char *url,const char *file,int64_t tim
 	}
 	//-
 	m_remotefilename.clear();
+	m_contenttype.clear();
 	m_contentlen=0;
 	m_startoffset=0;
 	m_offset=0;

@@ -272,8 +272,11 @@ bool Feed::execLoop(){
 			if (i->downloaded){
 				i->lastmod=m_downloader.getLastModified();
 				string remotename=m_downloader.getRemoteFileName();
+				if (remotename.empty())
+					remotename=FileUtil::getUrlFileName(i->url);
 				string ext=FileUtil::getFileExt(remotename);
 				if (!ext.empty()){
+					//TODO try figuring out the extension based on the mimetype (m_downloader.getContentType())
 					string newtname=getAvailableFileName(m_options["--tmp-dir"].value<string>(),"opusfeed",ext);
 					string newtfile=m_options["--tmp-dir"].value<string>()+"/"+newtname;
 					if (rename(tfile.c_str(),newtfile.c_str())==0){
@@ -282,12 +285,9 @@ bool Feed::execLoop(){
 					}
 				}
 				Log::log(Log::normal,true,true,"+ converting (%s)",i->title.c_str());
-				string cname=FileUtil::getFileName(remotename);
-				if (cname.empty()){
-					cname=FileUtil::getFileName(i->url);
-					if (cname.empty())
-						cname=tname;
-				}
+				string cname=remotename;
+				if (cname.empty())
+					cname=tname;
 				cname=getAvailableFileName(m_options["--media-dir"].value<string>(),cname,"opus");
 				string cfile=m_options["--media-dir"].value<string>()+"/"+cname;
 				i->converted=convert(tfile.c_str(),cfile.c_str());
@@ -320,7 +320,7 @@ bool Feed::execLoop(){
 		//- force update the rss file when --preserve-failed or --media-prefix change
 		string mediaprefix;
 		if (!getFeedPropertyStr("mediaprefix",mediaprefix) || mediaprefix!=m_options["--media-prefix"].value<string>())
-            setFeedPropertyStr("mediaprefix",m_options["--media-prefix"].value<string>());
+			setFeedPropertyStr("mediaprefix",m_options["--media-prefix"].value<string>());
 		bool preservefailed=true;
 		if (!getFeedPropertyBool("preservefailed",preservefailed) || preservefailed!=m_options["--preserve-failed"].value<bool>())
 			setFeedPropertyBool("preservefailed",m_options["--preserve-failed"].value<bool>());

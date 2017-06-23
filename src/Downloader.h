@@ -67,6 +67,7 @@ class Downloader{
 		string getRemoteFileName(){return m_remotefilename;}
 		int64_t getDownloadedBytes(){return m_offset;}
 		int64_t getContentLength(){return m_contentlen;}
+		string getContentType(){return m_contenttype;}
 		long getStatusCode(){return m_statuscode;}
 		int64_t getLastModified(){return m_lastmodified;}
 	private:
@@ -80,6 +81,7 @@ class Downloader{
 		template<typename T> static bool curl_setopt_internal(CURL *curl,CURLoption opt,const char *optstr,T value);
 	private:
 		string m_remotefilename;
+		string m_contenttype;
 		int64_t m_contentlen;
 		int64_t m_offset;
 		int64_t m_startoffset;

@@ -1,4 +1,4 @@
-## OpusFeed 1.4 ##
+## OpusFeed 1.5 ##
 
 **opusfeed** is a cross-platform software for automatically generating a low-quality opus rss feed from another (audio or video) rss feed.
 
@@ -84,8 +84,8 @@ at least the following options must be set :
     <tr><td>--user-agent</td><td>http user-agent string (default:Mozilla/5.0)</td></tr>
     <tr><td>--cookies</td><td>semicolon separated string of 'var=value' cookies</td></tr>
     <tr><td>--use-auth</td><td>use authentication [yes,no] (default:no)</td></tr>
-    <tr><td>--auth-user</td><td>user</td></tr>
-    <tr><td>--auth-pass</td><td>password</td></tr>
+    <tr><td>--auth-user</td><td>http authentication user</td></tr>
+    <tr><td>--auth-pass</td><td>http authentication password</td></tr>
     <tr><td>--use-proxy</td><td>use proxy [yes,no] (default:no)</td></tr>
     <tr><td>--proxy-host</td><td>proxy host</td></tr>
     <tr><td>--proxy-port</td><td>proxy port</td></tr>

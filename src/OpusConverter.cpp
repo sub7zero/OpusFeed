@@ -337,7 +337,7 @@ namespace OpusConverter{
 		//-----------------------------
 		// Cover art
 		//-----------------------------
-		//important note : at the time of writing this (using libav version 11.7)
+		//important note : at the time of writing this (using libav version 12.1)
 		//"libavformat/oggenc.c" has a bug in the function ogg_buffer_data(),
 		//where vorbis comments with data bigger than MAX_PAGE_SIZE=65025 aren't
 		//being broken down into multiple ogg pages when writing file header
@@ -461,7 +461,7 @@ namespace OpusConverter{
 														 (AVPixelFormat)iframe->format,
 														 cover_w,
 														 cover_h,
-														 PIX_FMT_YUVJ422P,
+														 AV_PIX_FMT_YUV422P,
 														 SWS_BICUBIC,
 														 NULL,
 														 NULL,
@@ -480,14 +480,14 @@ namespace OpusConverter{
 				goto skip_cover;
 			}
 			AVFrameDeleter oframe_deleter(&oframe);
-			int imgsize=avpicture_get_size(PIX_FMT_YUVJ422P,cover_w,cover_h);
+			int imgsize=avpicture_get_size(AV_PIX_FMT_YUV422P,cover_w,cover_h);
 			uint8_t *imgbuff=(uint8_t*)av_malloc(imgsize*sizeof(uint8_t));
 			if (imgbuff==NULL){
 				Log::log(Log::verbose,true,true,"! couldn't allocate frame buffer (skipping)");
 				goto skip_cover;
 			}
 			AVMemoryDeleter imgbuff_deleter(imgbuff);
-			avpicture_fill((AVPicture*)oframe,imgbuff,PIX_FMT_YUVJ422P,cover_w,cover_h);
+			avpicture_fill((AVPicture*)oframe,imgbuff,AV_PIX_FMT_YUV422P,cover_w,cover_h);
 			//-resize frame
 			sws_scale(resize_ctx,
 					  iframe->data,
@@ -509,7 +509,7 @@ namespace OpusConverter{
 			Log::log(Log::verbose,true,true,"- setting encoder options");
 			AVCodecContext *ovideo_cdc_ctx=avcodec_alloc_context3(ovideo_codec);
 			AVCodecContextDeleter ovideo_cdc_ctx_deleter(&ovideo_cdc_ctx);
-			ovideo_cdc_ctx->pix_fmt=PIX_FMT_YUVJ422P;
+			ovideo_cdc_ctx->pix_fmt=AV_PIX_FMT_YUV422P;
 			AVRational ovideo_tb={1,24};
 			ovideo_cdc_ctx->time_base=ovideo_tb;
 			ovideo_cdc_ctx->width=cover_w;

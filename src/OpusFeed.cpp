@@ -127,6 +127,8 @@ int main(int argc,char **argv){
 	options.registerOption(true,"--output-rss",param_string,"path of the output rss file");
 	options.registerOption("--update-interval",param_long,10L,"update interval in minutes, 0 for one shot");
 	options.registerOption(false,"--exec-on-change",param_string,"command to execute on data change");
+	//-logging options
+	options.registerHeader("Logging Options");
 	options.registerOption("--enable-colors",param_bool,true,"enable colored output");
 	options.registerOption("--enable-progress",param_bool,true,"show downloading/converting progress");
 	options.registerOption("--verbose","verbose output");

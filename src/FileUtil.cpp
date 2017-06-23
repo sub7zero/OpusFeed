@@ -82,4 +82,11 @@ namespace FileUtil{
 			return validateFileName(m[0][2].c_str());
 		return "";
 	}
+	//---
+	string getUrlFileName(const string &url){
+		Regex::match m=Regex::extract("([^/\\?#]+)([\\?#].+)?$",url.c_str(),PCRE_MULTILINE);
+		if (m.size())
+			return validateFileName(m[0][1].c_str());
+		return "";
+	}
 }

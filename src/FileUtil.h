@@ -20,6 +20,7 @@ namespace FileUtil{
 	string getFileFullName(const string &path);
 	string getFileName(const string &path);
 	string getFileExt(const string &path);
+	string getUrlFileName(const string &url);
 };
 
 #endif // FILEUTIL_H

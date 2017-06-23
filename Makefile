@@ -105,7 +105,7 @@ init: init-3rdparty init-opusfeed
 	if [ "$(shell expr substr $(shell uname -s) 1 10)" != "MINGW32_NT" ]; then \
 	export LIBS="-ldl"; \
 	fi; \
-	cd $(DIR_TMP)/curl* && ./configure --prefix=$(DIR_3RDPARTY) --enable-shared=no --with-ssl 2>&1 | tee $(DIR_LOG)/curl.txt
+	cd $(DIR_TMP)/curl* && ./configure --prefix=$(DIR_3RDPARTY) --without-libidn --disable-file --disable-ldap --disable-telnet --disable-rtsp --disable-pop3 --disable-imap --disable-smtp --disable-gopher --disable-ares --enable-shared=no --with-ssl 2>&1 | tee $(DIR_LOG)/curl.txt
 	cd $(DIR_TMP)/curl* && make 2>&1 | tee -a $(DIR_LOG)/curl.txt
 	cd $(DIR_TMP)/curl* && make install 2>&1 | tee -a $(DIR_LOG)/curl.txt
 #---
@@ -123,10 +123,6 @@ init: init-3rdparty init-opusfeed
 #---
 3rdparty-libav:
 	rm -f $(DIR_LOG)/libav.txt >/dev/null 2>&1
-	cd $(DIR_TMP)/libav* && sed -re 's/page->granule = granule;/&\
-			if (header \&\& page->segments_count == 255)\
-				ogg_buffer_page(s, oggstream);/' ./libavformat/oggenc.c > ./libavformat/oggenc.patched
-	cd $(DIR_TMP)/libav* && mv -f ./libavformat/oggenc.patched ./libavformat/oggenc.c
 	cd $(DIR_TMP)/libav* && ./configure --prefix=$(DIR_3RDPARTY) --disable-programs --disable-network --enable-gpl --enable-nonfree --enable-libopus 2>&1 | tee $(DIR_LOG)/libav.txt
 	cd $(DIR_TMP)/libav* && make 2>&1 | tee -a $(DIR_LOG)/libav.txt
 	cd $(DIR_TMP)/libav* && make install 2>&1 | tee -a $(DIR_LOG)/libav.txt
