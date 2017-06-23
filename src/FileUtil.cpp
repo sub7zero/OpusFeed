@@ -67,26 +67,24 @@ namespace FileUtil{
 		return validateFileName(path.c_str());
 	}
 	//---
+	string getUrlFileFullName(const string &url){
+		Regex::match m=Regex::extract("([^/\\?#]+)([\\?#].+)?$",url.c_str(),PCRE_MULTILINE);
+		if (m.size())
+			return validateFileName(m[0][1].c_str());
+		return "";
+	}
+	//---
 	string getFileName(const string &path){
-		string fullname=getFileFullName(path);
-		Regex::match m=Regex::extract("(.+?)(\\.[^.]*$|$)",fullname.c_str(),0);
+		Regex::match m=Regex::extract("(.+?)(\\.[^.]*$|$)",path.c_str(),0);
 		if (m.size())
 			return validateFileName(m[0][1].c_str());
 		return path;
 	}
 	//---
 	string getFileExt(const string &path){
-		string name=getFileFullName(path);
-		Regex::match m=Regex::extract("(.+?)\\.([^.]*$|$)",name.c_str(),0);
+		Regex::match m=Regex::extract("(.+?)\\.([^.]*$|$)",path.c_str(),0);
 		if (m.size())
 			return validateFileName(m[0][2].c_str());
-		return "";
-	}
-	//---
-	string getUrlFileName(const string &url){
-		Regex::match m=Regex::extract("([^/\\?#]+)([\\?#].+)?$",url.c_str(),PCRE_MULTILINE);
-		if (m.size())
-			return validateFileName(m[0][1].c_str());
 		return "";
 	}
 }

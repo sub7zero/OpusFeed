@@ -273,7 +273,7 @@ bool Feed::execLoop(){
 				i->lastmod=m_downloader.getLastModified();
 				string remotename=m_downloader.getRemoteFileName();
 				if (remotename.empty())
-					remotename=FileUtil::getUrlFileName(i->url);
+					remotename=FileUtil::getUrlFileFullName(i->url);
 				string ext=FileUtil::getFileExt(remotename);
 				if (!ext.empty()){
 					//TODO try figuring out the extension based on the mimetype (m_downloader.getContentType())
@@ -285,7 +285,7 @@ bool Feed::execLoop(){
 					}
 				}
 				Log::log(Log::normal,true,true,"+ converting (%s)",i->title.c_str());
-				string cname=remotename;
+				string cname=FileUtil::getFileName(remotename);
 				if (cname.empty())
 					cname=tname;
 				cname=getAvailableFileName(m_options["--media-dir"].value<string>(),cname,"opus");

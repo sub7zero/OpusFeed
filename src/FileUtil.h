@@ -18,9 +18,9 @@ namespace FileUtil{
 	bool fileExists(const char *file);
 	void touch(const char *file);
 	string getFileFullName(const string &path);
+	string getUrlFileFullName(const string &url);
 	string getFileName(const string &path);
 	string getFileExt(const string &path);
-	string getUrlFileName(const string &url);
 };
 
 #endif // FILEUTIL_H
